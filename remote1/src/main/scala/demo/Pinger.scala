@@ -50,5 +50,6 @@ object Pinger extends App{
 
     val client = system.actorOf(Props[PingActor])
     client ! (remoteActor, "ping")
+    system.shutdown()
   }
 }
