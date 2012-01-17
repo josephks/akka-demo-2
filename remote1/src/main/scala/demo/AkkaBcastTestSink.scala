@@ -3,11 +3,13 @@ package demo
 import akka.actor.Actor._
 import akka.actor.{ ActorRef, Props, Actor, ActorSystem }
 
-class AkkaBcastTestSink extends  Actor{
+import com.typesafe.config.ConfigFactory
+
+class AkkaBcastTestSink extends  Actor  with akka.actor.ActorLogging{
 
   def receive = {
     case RegisterWith(a) => a ! RegisterSink
-    case msg => println (msg)
+    case msg => log.info("sink received: "+msg)
   }
 
 }
@@ -27,8 +29,16 @@ object AkkaBcastTestSink extends App {
         (if (host == null || host.length == 0) "localhost" else host, port.toInt.toString)
       case _ => usage
     }
-
-    val system = ActorSystem("testSink")
+    val configStr = """
+  akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+          remote.transport = "akka.remote.netty.NettyRemoteSupport"
+      cluster.nodename = "nsink"
+  }
+"""
+    val system = ActorSystem("testSink",ConfigFactory.parseString(configStr))
     val sink = system.actorOf(Props[AkkaBcastTestSink])
     val remoteActor =    system.actorFor("akka://" + AkkaBcastServer.serviceName +"@"+hostStr+":"+portStr+"/user/"+ AkkaBcastServer.actorName)
     sink ! new RegisterWith(remoteActor)

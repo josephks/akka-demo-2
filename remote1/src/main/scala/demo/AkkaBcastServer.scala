@@ -12,7 +12,7 @@ class AkkaBcastServer extends akka.actor.Actor  with akka.actor.ActorLogging{
   var sinks = Set[ActorRef]()
 
   def receive = {
-    case RegisterSink() =>
+    case RegisterSink =>
       sinks += sender
       log.info("registred sink")
     case bm @ BroadcastMessage(_,_) =>
@@ -29,7 +29,7 @@ object AkkaBcastServer {
   val serviceName = "bacastsevice"
 }
 
-case class RegisterSink(){}
+case class RegisterSink()
 case class RegisterWith(a:ActorRef){}
 case class BroadcastMessage(domain: String, msg: String)
 
@@ -48,21 +48,20 @@ object AkkaBcastMain extends App{
     }
     val sb = new StringBuilder
     sb.append ("""
-                     bcast {
-  include "common"
 
   akka {
+   actor.provider = "akka.remote.RemoteActorRefProvider"
+            remote.transport = "akka.remote.netty.NettyRemoteSupport"
     remote.server.port = """ + portStr   )
     hostStr.foreach( x => sb.append("""
           remote.server.hostname =  """ +   x )  )
     sb.append("""
       cluster.nodename = "n1"
   }
-}
 """)
 
 
-    Console.out.println("servermain: creating system")
+    Console.out.println("servermain: creating system, config is:\n"+sb)
     val system = ActorSystem(AkkaBcastServer.serviceName, ConfigFactory.parseString(sb.toString))
     Console.out.println("servermain: creating actor")
     val remoteActor = system.actorOf(Props[AkkaBcastServer], AkkaBcastServer.actorName)

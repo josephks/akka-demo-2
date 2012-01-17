@@ -37,13 +37,13 @@ object Pinger extends App{
       System.exit(1)
     }
     val configStr = """
-                     bcast {
-  include "common"
-
   akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+          remote.transport = "akka.remote.netty.NettyRemoteSupport"
       cluster.nodename = "np"
   }
-}
 """
     val system = ActorSystem("pinger",ConfigFactory.parseString(configStr))
     val remoteActor = system.actorFor("akka://" + AkkaBcastServer.serviceName +"@"+hostStr+":"+portStr+"/user/"+ AkkaBcastServer.actorName)
