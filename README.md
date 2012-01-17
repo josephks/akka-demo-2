@@ -21,6 +21,7 @@ In terminal window 2:
 ```bash remote1/target/scala-2.9.1/classes/ping.sh```
 
 Instead of the "pong" expected, output on client side is:
+
 ```
 host: null port: 2222
 got fut
