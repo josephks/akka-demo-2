@@ -22,6 +22,7 @@ object Pinger extends App{
         val fut = remoteActor ? (msg, timeout=10.seconds)
         Console.out.println("got fut")
         fut.onComplete(x => Console.out.println("rec from server: "+x))
+        self ! akka.actor.PoisonPill
       case x =>
         Console.out.println("PingActor: received: "+x)
     }
@@ -29,7 +30,9 @@ object Pinger extends App{
 
   override def main(args: Array[String]): Unit = {
     val HostPort = new scala.util.matching.Regex("""(\w+:)?(\d+)""")
-    val (hostStr, portStr) = args match{
+
+    val (hostStr, portStr) = //use when debugging in IDE: ("localhost", "2222")
+    args match{
       case Array(HostPort(host, port)) =>
         Console.err.println("host: "+host+" port: "+port)
         (if (host == null || host.length == 0) "localhost" else host, port.toInt.toString)
@@ -40,6 +43,8 @@ object Pinger extends App{
   akka {
   actor {
     provider = "akka.remote.RemoteActorRefProvider"
+    default-dispatcher.daemonic = on
+     keep-alive-time = 1s
   }
           remote.transport = "akka.remote.netty.NettyRemoteSupport"
       cluster.nodename = "np"
@@ -50,6 +55,8 @@ object Pinger extends App{
 
     val client = system.actorOf(Props[PingActor])
     client ! (remoteActor, "ping")
-    system.shutdown()
+    Thread.sleep(1000)
+    system.shutdown()  //race condition? Is it too early to shutdown if we haven't received the reply yet?
+    Console.out.println("actor system was shut down")
   }
 }
